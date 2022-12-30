@@ -65,7 +65,7 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
                 term,
                 monthlyPayment,
                 rate,
-                monthlyPayment.multiply(new BigDecimal(String.valueOf(rate))),
+                monthlyPayment.multiply(new BigDecimal(String.valueOf(term))),
                 scoringDataDTO.getIsInsuranceEnabled(),
                 scoringDataDTO.getIsSalaryClient(),
                 paymentSchedule);
