@@ -76,7 +76,8 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
         EmploymentDTO employment = scoringDataDTO.getEmployment();
         EmploymentStatus employmentStatus = employment.getEmploymentStatus();
         if (employmentStatus == EmploymentStatus.UNEMPLOYED) {
-            throw new ScoreException(String.format("Credit denied (Employment status: %s).", employmentStatus.name()));
+            throw new ScoreException(String.format("Credit denied (Employment status \"%s\" is unacceptable).",
+                    employmentStatus.name()));
         }
         BigDecimal amount = scoringDataDTO.getAmount();
         BigDecimal salary = employment.getSalary();
@@ -84,26 +85,30 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
         if (amount.divide(salary, 12, RoundingMode.HALF_UP)
                 .compareTo(new BigDecimal(amountSalaryMaxRatio)) > 0) {
             throw new ScoreException(String.format(
-                    "Credit denied ('Credit amount':'salary' ratio is more than %d).", amountSalaryMaxRatio));
+                    "Credit denied ('Credit amount':'salary' ratio is more than %d" +
+                            "; actual salary: %f, actual credit amount: %f).", amountSalaryMaxRatio,
+                    salary.doubleValue(), amount.doubleValue()));
         }
         int age = secondaryCalculationService.calculateCurrentAge(scoringDataDTO.getBirthdate());
         int minAge = 20;
         int maxAge = 60;
         if (age < minAge || maxAge < age) {
             throw new ScoreException(String.format(
-                    "Credit denied (Age must be in range from %d to %d).", minAge, maxAge));
+                    "Credit denied (Age must be in range from %d to %d; actual age: %d).", minAge, maxAge, age));
         }
         Integer experienceTotal = employment.getWorkExperienceTotal();
         int minTotalExperience = 12;
         if (experienceTotal < minTotalExperience) {
             throw new ScoreException(String.format(
-                    "Credit denied (Total work experience must not be less than %d months).", minTotalExperience));
+                    "Credit denied (Total work experience must not be less than %d months" +
+                            "; actual total work experience: %d months).", minTotalExperience, experienceTotal));
         }
         Integer experienceCurrent = employment.getWorkExperienceCurrent();
         int minCurrentExperience = 3;
         if (experienceCurrent < minCurrentExperience) {
             throw new ScoreException(String.format(
-                    "Credit denied (Current work experience must not be less than %d months).", minCurrentExperience));
+                    "Credit denied (Current work experience must not be less than %d months" +
+                            "; actual current work experience: %d months).", minCurrentExperience, experienceCurrent));
         }
 
         int rate = 0;
