@@ -23,7 +23,7 @@ import java.util.List;
 public class CreditCalculationServiceImpl implements CreditCalculationService {
 
     @Value("${credit.base-rate}")
-    private BigDecimal baseRate;
+    private BigDecimal baseRateFromProperties;
     @Value("${credit.calculation-precision}")
     private int calculationPrecision;
 
@@ -35,6 +35,10 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
 
     @Override
     public CreditDTO calculateCredit(ScoringDataDTO scoringDataDTO) throws ScoreException {
+        return calculateCredit(scoringDataDTO, baseRateFromProperties);
+    }
+
+    public CreditDTO calculateCredit(ScoringDataDTO scoringDataDTO, BigDecimal baseRate) throws ScoreException {
         BigDecimal rate = baseRate.add(new BigDecimal(score(scoringDataDTO)));
         Integer term = scoringDataDTO.getTerm();
         BigDecimal monthRateValue = rate.divide(
