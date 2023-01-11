@@ -42,7 +42,7 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
         BigDecimal rate = baseRate.add(new BigDecimal(score(scoringDataDTO)));
         Integer term = scoringDataDTO.getTerm();
         BigDecimal monthRateValue = rate.divide(
-                new BigDecimal(term * 100), calculationPrecision, RoundingMode.HALF_UP);
+                new BigDecimal(12 * 100), calculationPrecision, RoundingMode.HALF_UP);
         BigDecimal amount = scoringDataDTO.getAmount();
         BigDecimal monthlyPayment = monthRateValue
                 .add(monthRateValue
