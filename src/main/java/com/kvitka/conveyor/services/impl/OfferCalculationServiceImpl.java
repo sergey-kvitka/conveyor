@@ -41,7 +41,7 @@ public class OfferCalculationServiceImpl implements OfferCalculationService {
         List<Boolean> booleans = Arrays.asList(true, false);
         for (boolean isInsuranceEnabled : booleans) {
             if (isInsuranceEnabled) {
-                totalAmount = requestedAmount.multiply(new BigDecimal("1.1"));
+                totalAmount = requestedAmount.multiply(new BigDecimal("0.9"));
                 rate = baseRate.subtract(new BigDecimal(5));
             } else {
                 totalAmount = requestedAmount.add(BigDecimal.ZERO);
