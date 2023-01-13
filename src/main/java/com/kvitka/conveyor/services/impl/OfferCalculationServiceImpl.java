@@ -58,7 +58,7 @@ public class OfferCalculationServiceImpl implements OfferCalculationService {
                         term,
                         secondaryCalculationService.calculateMonthlyPayment(
                                 totalAmount,
-                                rate.divide(new BigDecimal("0.12"), calculationPrecision, RoundingMode.HALF_UP),
+                                rate.divide(new BigDecimal("1200"), calculationPrecision, RoundingMode.HALF_UP),
                                 term),
                         rate,
                         isInsuranceEnabled, isSalaryClient
@@ -81,7 +81,7 @@ public class OfferCalculationServiceImpl implements OfferCalculationService {
         String middleName = loanApplicationRequestDTO.getMiddleName();
         if (middleName != null && !middleName.isEmpty()) {
             validateNamePattern(loanApplicationRequestDTO.getMiddleName(), "middle name",
-                    onlyLettersAndLength, onlyLettersAndLengthMismatchMessage);
+                    onlyLettersAndLength, onlyLettersAndLengthMismatchMessage + " (if it's present)");
         }
 
         int minTerm = 6;
