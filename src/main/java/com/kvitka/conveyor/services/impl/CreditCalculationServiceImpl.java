@@ -49,20 +49,25 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
         BigDecimal currentRemainingDebt = amount;
         BigDecimal interestPayment, debtPayment;
         List<PaymentScheduleElement> paymentSchedule = new ArrayList<>();
+        PaymentScheduleElement paymentScheduleElement = new PaymentScheduleElement();
         for (int i = 1; i <= term; i++) {
             interestPayment = currentRemainingDebt.multiply(monthRateValue).setScale(2, RoundingMode.HALF_UP);
             debtPayment = monthlyPayment.subtract(interestPayment);
             currentRemainingDebt = currentRemainingDebt.subtract(debtPayment);
-            paymentSchedule.add(new PaymentScheduleElement(i, date,
-                    monthlyPayment, interestPayment, debtPayment, currentRemainingDebt));
+            paymentScheduleElement = new PaymentScheduleElement(i, date, monthlyPayment, interestPayment, debtPayment,
+                    currentRemainingDebt);
+            paymentSchedule.add(paymentScheduleElement);
             date = date.plusMonths(1);
         }
+        BigDecimal remainingDebt = paymentScheduleElement.getRemainingDebt();
+        paymentScheduleElement.setRemainingDebt(new BigDecimal(0));
+
         return new CreditDTO(
                 amount,
                 term,
                 monthlyPayment,
                 rate,
-                monthlyPayment.multiply(new BigDecimal(String.valueOf(term))),
+                monthlyPayment.multiply(new BigDecimal(String.valueOf(term))).subtract(remainingDebt),
                 scoringDataDTO.getIsInsuranceEnabled(),
                 scoringDataDTO.getIsSalaryClient(),
                 paymentSchedule);
