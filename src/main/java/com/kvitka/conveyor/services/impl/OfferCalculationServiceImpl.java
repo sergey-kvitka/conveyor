@@ -52,7 +52,7 @@ public class OfferCalculationServiceImpl implements OfferCalculationService {
                         isSalaryClient ? -1 : 1
                 ));
                 loanOffers.add(new LoanOfferDTO(
-                        1L, /* ? applicationId */ //TODO
+                        null,
                         requestedAmount,
                         totalAmount,
                         term,
