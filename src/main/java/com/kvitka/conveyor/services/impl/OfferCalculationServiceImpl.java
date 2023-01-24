@@ -35,37 +35,35 @@ public class OfferCalculationServiceImpl implements OfferCalculationService {
         List<LoanOfferDTO> loanOffers = new ArrayList<>();
         Integer term = loanApplicationRequestDTO.getTerm();
         BigDecimal requestedAmount = loanApplicationRequestDTO.getAmount();
-        BigDecimal totalAmount;
-        BigDecimal rate;
+        BigDecimal totalAmount, monthlyPayment, rate;
 
         List<Boolean> booleans = Arrays.asList(true, false);
         for (boolean isInsuranceEnabled : booleans) {
-            if (isInsuranceEnabled) {
-                totalAmount = requestedAmount.multiply(new BigDecimal("0.9"));
-                rate = baseRate.subtract(new BigDecimal(5));
-            } else {
-                totalAmount = requestedAmount.add(BigDecimal.ZERO);
-                rate = baseRate.add(new BigDecimal(2));
-            }
+
+            rate = baseRate.add(new BigDecimal(isInsuranceEnabled ? -2 : 2));
+
             for (boolean isSalaryClient : booleans) {
-                rate = rate.add(new BigDecimal(
-                        isSalaryClient ? -1 : 1
-                ));
+
+                rate = rate.add(new BigDecimal(isSalaryClient ? -1 : 1));
+
+                monthlyPayment = secondaryCalculationService.calculateMonthlyPayment(
+                        requestedAmount,
+                        rate.divide(new BigDecimal("1200"), calculationPrecision, RoundingMode.HALF_UP),
+                        term);
+                totalAmount = monthlyPayment.multiply(new BigDecimal(term));
+
                 loanOffers.add(new LoanOfferDTO(
                         null,
                         requestedAmount,
                         totalAmount,
                         term,
-                        secondaryCalculationService.calculateMonthlyPayment(
-                                totalAmount,
-                                rate.divide(new BigDecimal("1200"), calculationPrecision, RoundingMode.HALF_UP),
-                                term),
+                        monthlyPayment,
                         rate,
                         isInsuranceEnabled, isSalaryClient
                 ));
             }
         }
-        loanOffers.sort(Comparator.comparing(LoanOfferDTO::getRate));
+        loanOffers.sort(Comparator.comparing(loanOfferDTO -> loanOfferDTO.getRate().negate()));
         return loanOffers;
     }
 
