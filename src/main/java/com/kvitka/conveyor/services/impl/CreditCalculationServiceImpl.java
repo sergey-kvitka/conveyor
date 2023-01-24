@@ -10,6 +10,7 @@ import com.kvitka.conveyor.enums.Gender;
 import com.kvitka.conveyor.enums.MaritalStatus;
 import com.kvitka.conveyor.exceptions.ScoreException;
 import com.kvitka.conveyor.services.CreditCalculationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +20,19 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class CreditCalculationServiceImpl implements CreditCalculationService {
+
+    private static final int AMOUNT_SALARY_MAX_RATIO = 20;
+    private static final int MIN_AGE = 20;
+    private static final int MAX_AGE = 60;
+    private static final int MIN_TOTAL_EXPERIENCE = 12;
+    private static final int MIN_CURRENT_EXPERIENCE = 3;
+
+    private static final int MIN_FEMALE_PREFERENTIAL_AGE = 35;
+    private static final int MIN_MALE_PREFERENTIAL_AGE = 30;
+    private static final int MAX_MALE_PREFERENTIAL_AGE = 55;
 
     @Value("${credit.base-rate}")
     private BigDecimal baseRateFromProperties;
@@ -39,6 +51,7 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
     }
 
     public CreditDTO calculateCredit(ScoringDataDTO scoringDataDTO, BigDecimal baseRate) throws ScoreException {
+        log.info("Credit calculation started. Arguments: {} and base rate is {}", scoringDataDTO, baseRate);
         BigDecimal rate = baseRate.add(new BigDecimal(score(scoringDataDTO)));
         Integer term = scoringDataDTO.getTerm();
         BigDecimal monthRateValue = rate.divide(
@@ -62,7 +75,7 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
         BigDecimal remainingDebt = paymentScheduleElement.getRemainingDebt();
         paymentScheduleElement.setRemainingDebt(new BigDecimal(0));
 
-        return new CreditDTO(
+        CreditDTO creditDTO = new CreditDTO(
                 amount,
                 term,
                 monthlyPayment,
@@ -71,47 +84,58 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
                 scoringDataDTO.getIsInsuranceEnabled(),
                 scoringDataDTO.getIsSalaryClient(),
                 paymentSchedule);
+        log.info("Credit calculation finished. Result: {}", creditDTO);
+        return creditDTO;
     }
 
     @Override
     public int score(ScoringDataDTO scoringDataDTO) throws ScoreException {
+        log.info("Scoring started. Data to score: {}", scoringDataDTO);
+
         EmploymentDTO employment = scoringDataDTO.getEmployment();
         EmploymentStatus employmentStatus = employment.getEmploymentStatus();
+        log.info("Scoring... checking employment status (value: {})", employmentStatus);
         if (employmentStatus == EmploymentStatus.UNEMPLOYED) {
             throw new ScoreException(String.format("Credit denied (Employment status \"%s\" is unacceptable).",
                     employmentStatus.name()));
         }
+
         BigDecimal amount = scoringDataDTO.getAmount();
         BigDecimal salary = employment.getSalary();
-        int amountSalaryMaxRatio = 20;
+        log.info("Scoring... checking 'credit amount':'salary' ratio (amount: {}, salary: {})", amount, salary);
         if (amount.divide(salary, 12, RoundingMode.HALF_UP)
-                .compareTo(new BigDecimal(amountSalaryMaxRatio)) > 0) {
+                .compareTo(new BigDecimal(AMOUNT_SALARY_MAX_RATIO)) > 0) {
             throw new ScoreException(String.format(
                     "Credit denied ('Credit amount':'salary' ratio is more than %d" +
-                            "; actual salary: %f, actual credit amount: %f).", amountSalaryMaxRatio,
+                            "; actual salary: %f, actual credit amount: %f).", AMOUNT_SALARY_MAX_RATIO,
                     salary.doubleValue(), amount.doubleValue()));
         }
-        int age = secondaryCalculationService.calculateCurrentAge(scoringDataDTO.getBirthdate());
-        int minAge = 20;
-        int maxAge = 60;
-        if (age < minAge || maxAge < age) {
+
+        LocalDate birthdate = scoringDataDTO.getBirthdate();
+        int age = secondaryCalculationService.calculateCurrentAge(birthdate);
+        log.info("Scoring... checking age (birthdate: {}, age: {})", birthdate, age);
+        if (age < MIN_AGE || MAX_AGE < age) {
             throw new ScoreException(String.format(
-                    "Credit denied (Age must be in range from %d to %d; actual age: %d).", minAge, maxAge, age));
+                    "Credit denied (Age must be in range from %d to %d; actual age: %d).", MIN_AGE, MAX_AGE, age));
         }
+
         Integer experienceTotal = employment.getWorkExperienceTotal();
-        int minTotalExperience = 12;
-        if (experienceTotal < minTotalExperience) {
+        log.info("Scoring... checking total experience (value: {} (months))", experienceTotal);
+        if (experienceTotal < MIN_TOTAL_EXPERIENCE) {
             throw new ScoreException(String.format(
                     "Credit denied (Total work experience must not be less than %d months" +
-                            "; actual total work experience: %d months).", minTotalExperience, experienceTotal));
+                            "; actual total work experience: %d months).", MIN_TOTAL_EXPERIENCE, experienceTotal));
         }
+
         Integer experienceCurrent = employment.getWorkExperienceCurrent();
-        int minCurrentExperience = 3;
-        if (experienceCurrent < minCurrentExperience) {
+        log.info("Scoring... checking current experience (value: {} (months))", experienceCurrent);
+        if (experienceCurrent < MIN_CURRENT_EXPERIENCE) {
             throw new ScoreException(String.format(
-                    "Credit denied (Current work experience must not be less than %d months" +
-                            "; actual current work experience: %d months).", minCurrentExperience, experienceCurrent));
+                    "Credit denied (Current work experience must not be less than %d months; " +
+                            "actual current work experience: %d months).", MIN_CURRENT_EXPERIENCE, experienceCurrent));
         }
+
+        log.info("Scoring: All checks passed! Calculating rate");
 
         int rate = 0;
         if (employmentStatus == EmploymentStatus.SELF_EMPLOYED) rate += 1;
@@ -128,13 +152,11 @@ public class CreditCalculationServiceImpl implements CreditCalculationService {
         if (scoringDataDTO.getDependentAmount() > 1) rate += 1;
 
         Gender gender = scoringDataDTO.getGender();
-        int minFemalePreferentialAge = 35;
-        int minMalePreferentialAge = 30;
-        int maxMalePreferentialAge = 55;
-        if (gender == Gender.FEMALE && age >= minFemalePreferentialAge) rate -= 3;
-        else if (gender == Gender.MALE && age >= minMalePreferentialAge && age <= maxMalePreferentialAge) rate -= 3;
+        if (gender == Gender.FEMALE && age >= MIN_FEMALE_PREFERENTIAL_AGE) rate -= 3;
+        else if (gender == Gender.MALE && age >=MIN_MALE_PREFERENTIAL_AGE && age <=MAX_MALE_PREFERENTIAL_AGE) rate -= 3;
         else if (gender == Gender.NON_BINARY) rate += 3;
 
+        log.info("Scoring finished. Calculated rate: {}", rate);
         return rate;
     }
 }
