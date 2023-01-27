@@ -1,6 +1,7 @@
 package com.kvitka.conveyor;
 
 import com.kvitka.conveyor.dtos.EmploymentDTO;
+import com.kvitka.conveyor.dtos.LoanApplicationRequestDTO;
 import com.kvitka.conveyor.dtos.ScoringDataDTO;
 import com.kvitka.conveyor.enums.EmploymentPosition;
 import com.kvitka.conveyor.enums.EmploymentStatus;
@@ -25,7 +26,7 @@ public class ConveyorApplicationTests {
     }
 
     public static BigDecimal toDecimal(double n) {
-        return new BigDecimal(n);
+        return new BigDecimal("" + n);
     }
 
     public static Function<Integer, String> testName = n -> "test" + n;
@@ -46,5 +47,19 @@ public class ConveyorApplicationTests {
                         24,
                         6
                 ), "12345678901234", true, true);
+    }
+
+    public static LoanApplicationRequestDTO defaultLoanApplicationRequest() {
+        return new LoanApplicationRequestDTO(
+                toDecimal(500_000),
+                24,
+                "Andrei",
+                "Andreev",
+                "Andreevich",
+                "example@gmail.com",
+                LocalDate.now().minusYears(30),
+                "5735",
+                "984510"
+        );
     }
 }
