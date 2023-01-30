@@ -1,6 +1,5 @@
 package com.kvitka.conveyor.controllers;
 
-import com.kvitka.conveyor.exceptions.PreScoreException;
 import com.kvitka.conveyor.exceptions.ScoreException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,16 +16,7 @@ public class ExceptionHandlingController {
     @ExceptionHandler(ScoreException.class)
     public ResponseEntity<String> scoreExceptionHandler(ScoreException e) {
         log.warn("ScoreException handled (message: {})", e.getMessage());
-        return ResponseEntity.badRequest().body(
-                e.getClass().getSimpleName() + ": " + e.getMessage());
-    }
-
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(PreScoreException.class)
-    public ResponseEntity<String> preScoreExceptionHandler(PreScoreException e) {
-        log.warn("PreScoreException handled (message: {})", e.getMessage());
-        return ResponseEntity.badRequest().body(
-                e.getClass().getSimpleName() + ": " + e.getMessage());
+        return ResponseEntity.badRequest().body(e.getClass().getSimpleName() + ": " + e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -35,7 +25,6 @@ public class ExceptionHandlingController {
         String exceptionSimpleName = e.getClass().getSimpleName();
         String exceptionMessage = e.getMessage();
         log.warn("Other exception ({}) handled (message: {})", exceptionSimpleName, exceptionMessage);
-        return ResponseEntity.badRequest().body(
-                exceptionSimpleName + ": " + exceptionMessage);
+        return ResponseEntity.badRequest().body(exceptionSimpleName + ": " + exceptionMessage);
     }
 }

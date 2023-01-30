@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.Period;
 
 @Slf4j
 @Service
@@ -17,18 +18,7 @@ public class SecondaryCalculationService {
 
     public int calculateCurrentAge(LocalDate birthdate) {
         log.info("Age calculation started (birthdate: {})", birthdate);
-        LocalDate now = LocalDate.now();
-        int birthdateMonth = birthdate.getMonth().getValue();
-        int monthNow = now.getMonth().getValue();
-
-        if (birthdate.getEra().getValue() == 0) {
-            log.warn("Age calculation failed: date.getEra() invalid value");
-            return -1;
-        }
-        int age = now.getYear() - birthdate.getYear() - ((
-                (monthNow < birthdateMonth
-                        || (birthdateMonth == monthNow && birthdate.getDayOfMonth() > now.getDayOfMonth())) ? 1 : 0
-        ));
+        int age = Period.between(birthdate, LocalDate.now()).getYears();
         log.info("Age calculation finished (result: {} (years))", age);
         return age;
     }
