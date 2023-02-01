@@ -40,12 +40,11 @@ public class OfferCalculationServiceImpl implements OfferCalculationService {
 
         List<Boolean> booleans = Arrays.asList(true, false);
         for (boolean isInsuranceEnabled : booleans) {
-
-            rate = baseRate.add(new BigDecimal(INSURANCE_RATE_VARIATION * (isInsuranceEnabled ? 1 : -1)));
-
             for (boolean isSalaryClient : booleans) {
 
-                rate = rate.add(new BigDecimal(SALARY_CLIENT_RATE_VARIATION * (isSalaryClient ? 1 : -1)));
+                rate = baseRate
+                        .add(new BigDecimal(INSURANCE_RATE_VARIATION * (isInsuranceEnabled ? 1 : -1)))
+                        .add(new BigDecimal(SALARY_CLIENT_RATE_VARIATION * (isSalaryClient ? 1 : -1)));
 
                 monthlyPayment = secondaryCalculationService.calculateMonthlyPayment(
                         requestedAmount,
