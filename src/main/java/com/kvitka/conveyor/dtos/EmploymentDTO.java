@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class EmploymentDTO {
     private EmploymentStatus employmentStatus;
-    private String employmentINN;
+    private String employerINN;
     private BigDecimal salary;
     private EmploymentPosition position;
     private Integer workExperienceTotal;

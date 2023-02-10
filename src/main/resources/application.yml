@@ -1,2 +1,7 @@
 server:
   port: 8081
+
+credit:
+  calculation-precision: 12
+  base-rate: 20
+  allowable-error: 1
